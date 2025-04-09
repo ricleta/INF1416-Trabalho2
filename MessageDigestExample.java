@@ -7,25 +7,24 @@ public class MessageDigestExample {
   public static void main (String[] args) throws Exception {
     //
     // check args and get plaintext
-    if (args.length != 1) {
+    if (args.length != 3) {
       System.err.println("Usage: java MessageDigestExample text");
       System.exit(1);
     }
-    byte[] plainText = args[0].getBytes("UTF8");
-    //
-    // get a message digest object using the MD5 algorithm
-    //MessageDigest messageDigest = MessageDigest.getInstance("MD5");
-    //MessageDigest messageDigest = MessageDigest.getInstance("SHA-1");
-    MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
-    //MessageDigest messageDigest = MessageDigest.getInstance("SHA-512");
-    //
-    // print out the provider used
-    System.out.println( "\n" + messageDigest.getProvider().getInfo() );
-    //
-    // calculate the digest and print it out
+
+    //getting each argument from command prompt
+    byte[] tipo_digest = args[0].getBytes("UTF8");
+    byte[] caminho_da_Pasta_dos_Arquivos = args[1].getBytes("UTF8");
+    byte[] caminho_ArqListaDigest = args[2].getBytes("UTF8");
+    
+    // get a message digest object using the algorithm from command prompt
+    MessageDigest messageDigest = MessageDigest.getInstance(tipo_digest);
+    
+    
+    //use file content instead of plaintext
     messageDigest.update( plainText);
     byte [] digest = messageDigest.digest();
-    System.out.println( "\nDigest length: " + digest.length * 8 + "bits" );
+    //System.out.println( "\nDigest length: " + digest.length * 8 + "bits" );
 
     // converte o digist para hexadecimal
     StringBuffer buf = new StringBuffer();
