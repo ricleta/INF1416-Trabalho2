@@ -6,9 +6,11 @@ public class MessageDigestExample {
 
   public static void main (String[] args) throws Exception {
     //
-    // check args and get plaintext
+    // check number os args
     if (args.length != 3) {
-      System.err.println("Usage: java MessageDigestExample text");
+      //if not enough arguments, print instructions and exit
+      System.err.println("Argumentos da linha de comando omitidos ou insuficientes para a execução do programa \n" +
+                         "Uso: java DigestCalculator <SP> Tipo_Digest <SP> Caminho_da_Pasta_dos_Arquivos <SP> Caminho_ArqListaDigest");
       System.exit(1);
     }
 
@@ -18,7 +20,7 @@ public class MessageDigestExample {
     byte[] caminho_ArqListaDigest = args[2].getBytes("UTF8");
     
     // get a message digest object using the algorithm from command prompt
-    MessageDigest messageDigest = MessageDigest.getInstance(tipo_digest);
+    MessageDigest messageDigest = MessageDigest.getInstance(tipo_digest.toString());
     
     
     //use file content instead of plaintext
