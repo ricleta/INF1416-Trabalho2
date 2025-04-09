@@ -2,7 +2,7 @@ import java.security.*;
 import javax.crypto.*;
 //
 // Generate a Message Digest
-public class MessageDigestExample {
+public class DigestCalculator {
 
   public static void main (String[] args) throws Exception {
     //
