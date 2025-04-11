@@ -29,7 +29,7 @@ public class DigestCalculator {
 
   public static void main (String[] args) throws Exception {
     
-    // check number os args
+    // check number of args
     if (args.length != 3) {
       //if not enough arguments, print instructions and exit
       System.err.println("Usage: java DigestCalculator Tipo_Digest Caminho_da_Pasta_dos_Arquivos Caminho_ArqListaDigest");
