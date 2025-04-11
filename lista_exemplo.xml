@@ -1,0 +1,20 @@
+<CATALOG>
+    <FILE_ENTRY>
+        <FILE_NAME>Arquivo1.dat</FILE_NAME>
+            <DIGEST_ENTRY>
+                <DIGEST_TYPE>SHA1</DIGEST_TYPE>
+                <DIGEST_HEX> 8d901bb3a2840ac030f7dbdd7cb823808858cb2f</DIGEST_HEX>
+            </DIGEST_ENTRY>
+            <DIGEST_ENTRY>
+                <DIGEST_TYPE>MD5</DIGEST_TYPE>
+                <DIGEST_HEX>42b83991bd1b47b373074111c34fb428</DIGEST_HEX>
+            </DIGEST_ENTRY>
+    </FILE_ENTRY>
+    <FILE_ENTRY>
+        <FILE_NAME>Arquivo2.dat</FILE_NAME>
+            <DIGEST_ENTRY>
+                <DIGEST_TYPE>SHA256</DIGEST_TYPE>
+                <DIGEST_HEX>c8db093d264aa744d178470ad97aa64e67e84ab96e3b3310fb6f0eda429e6622</DIGEST_HEX>
+            </DIGEST_ENTRY>
+        </FILE_ENTRY>
+</CATALOG>
