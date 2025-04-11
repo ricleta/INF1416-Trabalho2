@@ -1,0 +1,4 @@
+Hello, this is a test file.
+It is used for testing DigestCalculator.
+Line two of text.
+Line three with more content.
