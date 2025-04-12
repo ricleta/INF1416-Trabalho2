@@ -20,6 +20,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 //
@@ -119,14 +120,22 @@ public class DigestCalculator {
   private static ArrayList<FileEntry> readDigestListFromXml(File xmlFile) {
     try {
       ArrayList<FileEntry> fileEntries = new ArrayList<>();
+
+      // Check if the file is empty
+      if (xmlFile.length() == 0) {
+        // System.out.println("XML file is empty. Returning an empty list.");
+        return fileEntries; // Return an empty list
+      }
+      
+
       DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
       DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+
       Document doc = dBuilder.parse(xmlFile);
-        
-      System.out.println("Root element :" + doc.getDocumentElement().getNodeName());
-      
+
+      // System.out.println("Root element :" + doc.getDocumentElement().getNodeName());
+
       NodeList fileEntryList = doc.getElementsByTagName("FILE_ENTRY");
-      
       for (int temp = 0; temp < fileEntryList.getLength(); temp++) {
         org.w3c.dom.Node fileEntryNode = fileEntryList.item(temp);
         
@@ -138,7 +147,7 @@ public class DigestCalculator {
           
           FileEntry fileEntry = new FileEntry(fileName);
           
-          System.out.println("File Name: " + fileName);
+          // System.out.println("File Name: " + fileName);
 
           NodeList digestEntryList = fileEntryElement.getElementsByTagName("DIGEST_ENTRY");
           for (int i = 0; i < digestEntryList.getLength(); i++) {
@@ -149,20 +158,16 @@ public class DigestCalculator {
             for (int j = 0; j < digestTypeList.getLength(); j++) {
               org.w3c.dom.Node digestTypeNode = digestTypeList.item(j);
               String digestType = digestTypeNode.getTextContent();
-              System.out.println("Digest Type: " + digestType);
+              // System.out.println("Digest Type: " + digestType);
               
               NodeList digestHexList = digestEntryElement.getElementsByTagName("DIGEST_HEX");
               org.w3c.dom.Node digestHexNode = digestHexList.item(0);
               String digestHex = digestHexNode.getTextContent();
 
-              System.out.println("Digest Hex: " + digestHex);
+              // System.out.println("Digest Hex: " + digestHex);
 
               // Add the digest to the file entry
-              if (fileEntry.addDigest(digestType, digestHex)) {
-                System.out.println("Digest added successfully.");
-              } else {
-                System.out.println("Failed to add digest.");
-              }
+              fileEntry.addDigest(digestType, digestHex);
             }
           }
           fileEntries.add(fileEntry);
@@ -181,70 +186,26 @@ public class DigestCalculator {
       DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
       Document doc;
 
-      // Check if the XML file exists
-      if (xmlFile.exists()) {
-      doc = dBuilder.parse(xmlFile);
+      // If the XML file is empty, create the first entry
+      // Otherwise, check if the current entry already exists
+      if (xmlFile.length() == 0) {
+        doc = createFirstEntry(entry, digestType);
       } else {
-      // Create a new XML document if the file does not exist
-      doc = dBuilder.newDocument();
-      Element rootElement = doc.createElement("DIGEST_LIST");
-      doc.appendChild(rootElement);
-      }
+        doc = dBuilder.parse(xmlFile);
 
-      // Get the root element
-      Element rootElement = doc.getDocumentElement();
-      
-      // Check if the FILE_ENTRY element already exists
-      if (!doesElementExist(doc, "FILE_ENTRY")) {
-        // Create a new FILE_ENTRY element
-        Element fileEntryElement = doc.createElement("FILE_ENTRY");
-      }
-      else {
-        // If there are existing FILE_ENTRY elements, check if the file name already exists
         NodeList fileEntryList = doc.getElementsByTagName("FILE_ENTRY");
-        
-        for (int i = 0; i < fileEntryList.getLength(); i++) {
-          Element fileEntryElement = (Element) fileEntryList.item(i);
-          NodeList fileNameList = fileEntryElement.getElementsByTagName("FILE_NAME");
-          String existingFileName = fileNameList.item(0).getTextContent();
+
+        if (isfileAlreadyRegistered(fileEntryList, entry.getFileName())) {
+          // System.out.println(entry.getFileName() + "already registered in the XML file.");
           
-          if (existingFileName.equals(entry.getFileName())) {
-            // If the file name already exists, add the new digest to the existing FILE_ENTRY
-            Element digestEntryElement = doc.createElement("DIGEST_ENTRY");
-
-            Element digestTypeElement = doc.createElement("DIGEST_TYPE");
-            digestTypeElement.appendChild(doc.createTextNode(digestType));
-            digestEntryElement.appendChild(digestTypeElement);
-      
-            Element digestHexElement = doc.createElement("DIGEST_HEX");
-            digestHexElement.appendChild(doc.createTextNode(entry.getDigestHex(digestType)));
-            digestEntryElement.appendChild(digestHexElement);
-      
-            fileEntryElement.appendChild(digestEntryElement);
-            break;      
-          }
+          // only add the digest
+          addDigestEntry(doc, entry, digestType);
+        } else {
+          // System.out.println(entry.getFileName() + " not registered. Adding new entry.");
+          
+          doc = addEntry(doc, entry, digestType);
         }
-
-        // If the file name does not exist, create a new FILE_ENTRY element
-        // Add FILE_NAME element
-        Element fileEntryElement = doc.createElement("FILE_ENTRY");
-
-        Element fileNameElement = doc.createElement("FILE_NAME");
-        fileNameElement.appendChild(doc.createTextNode(entry.getFileName()));
-        fileEntryElement.appendChild(fileNameElement);
-      
-        // Add DIGEST_ENTRY element
-        Element digestEntryElement = doc.createElement("DIGEST_ENTRY");
-        Element digestTypeElement = doc.createElement("DIGEST_TYPE");
-        digestTypeElement.appendChild(doc.createTextNode(digestType));
-        digestEntryElement.appendChild(digestTypeElement);
-        
-        Element digestHexElement = doc.createElement("DIGEST_HEX");
-        digestHexElement.appendChild(doc.createTextNode(entry.getDigestHex(digestType)));
       }
-
-      // // Append the new FILE_ENTRY to the root element
-      // rootElement.appendChild(fileEntryElement);
 
       // Write the updated document back to the XML file
       TransformerFactory transformerFactory = TransformerFactory.newInstance();
@@ -258,9 +219,89 @@ public class DigestCalculator {
     }
   }
   
-  private static Boolean doesElementExist(Document doc, String elementName) {
-    NodeList nodeList = doc.getElementsByTagName(elementName);
-    return nodeList.getLength() > 0;
+  private static Document createFirstEntry(FileEntry entry, String digestType) {
+    try {
+      // Create the root element
+      Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+
+      Element rootElement = doc.createElement("CATALOG");
+      doc.appendChild(rootElement);
+
+      doc = addEntry(doc, entry, digestType);
+  
+      return doc;
+
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return null; // Return null in case of an exception
+  }
+
+  private static Document addEntry(Document doc, FileEntry entry, String digestType) {
+    try {
+      // get the root element
+      Element rootElement = doc.getDocumentElement();
+
+      // Create the file entry element
+      Element fileEntryElement = doc.createElement("FILE_ENTRY");
+      rootElement.appendChild(fileEntryElement);
+
+      // Create the file name element
+      Element fileNameElement = doc.createElement("FILE_NAME");
+      fileNameElement.appendChild(doc.createTextNode(entry.getFileName()));
+      fileEntryElement.appendChild(fileNameElement);
+
+      doc = addDigestEntry(doc, entry, digestType);
+
+      return doc;
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return null; // Return null in case of an exception
+  }
+
+  private static Document addDigestEntry(Document doc, FileEntry entry, String digestType) {
+    try {
+      NodeList fileEntryList = doc.getElementsByTagName("FILE_ENTRY");
+      for (int i = 0; i < fileEntryList.getLength(); i++) {
+        Element fileEntryElement = (Element) fileEntryList.item(i);
+        NodeList fileNameList = fileEntryElement.getElementsByTagName("FILE_NAME");
+        String existingFileName = fileNameList.item(0).getTextContent();
+        
+        if (existingFileName.equals(entry.getFileName())) {
+           // Create the digest entry element
+          Element digestEntryElement = doc.createElement("DIGEST_ENTRY");
+          fileEntryElement.appendChild(digestEntryElement);
+
+          // Create the digest type element
+          Element digestTypeElement = doc.createElement("DIGEST_TYPE");
+          digestTypeElement.appendChild(doc.createTextNode(digestType));
+          digestEntryElement.appendChild(digestTypeElement);
+
+          // Create the digest hex element
+          Element digestHexElement = doc.createElement("DIGEST_HEX");
+          digestHexElement.appendChild(doc.createTextNode(entry.getDigestHex(digestType)));
+          digestEntryElement.appendChild(digestHexElement);
+
+          return doc;
+        }
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return null; // Return null in case of an exception
+  }
+
+  private static boolean isfileAlreadyRegistered(NodeList fileEntryList, String fileName) {
+    for (int i = 0; i < fileEntryList.getLength(); i++) {
+      Element fileEntryElement = (Element) fileEntryList.item(i);
+      NodeList fileNameList = fileEntryElement.getElementsByTagName("FILE_NAME");
+      String existingFileName = fileNameList.item(0).getTextContent();
+      if (existingFileName.equals(fileName)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static void checkStatus(ArrayList<FileEntry> newEntries, ArrayList<FileEntry> existingEntries, File arqListaDigest, String digestType) {
@@ -268,21 +309,25 @@ public class DigestCalculator {
 
     for (FileEntry newEntry : newEntries) {
       boolean found = false;
+
+      if (isThereCollision(newEntry, newEntries, existingEntries, digestType)) {
+        // System.out.println("Checking for collisions... newEntry: " + newEntry.getFileName() + " existingEntry: " + existingEntry.getFileName());
+        System.out.println(newEntry.getFileName() + " " + digestType + " " + newEntry.getDigestHex(digestType) + " (COLLISION)");
+        continue;
+      }
+
       for (FileEntry existingEntry : existingEntries) {
         if (newEntry.getFileName().equals(existingEntry.getFileName())) {
-          found = true;
-          if (newEntry.getDigestHex(digestType).equals(existingEntry.getDigestHex(digestType))) {
-            System.out.println(newEntry.getFileName() + " " + digestType + " " + newEntry.getDigestHex(digestType) + " (OK)");
-          } else {
-            System.out.println(newEntry.getFileName() + " " + digestType + " " + newEntry.getDigestHex(digestType) + " (NOT OK)");
-          }
-          break;
-        }
-        else
-        {
-          if (newEntry.getDigestHex(digestType).equals(existingEntry.getDigestHex(digestType))) {
+
+          if (existingEntry.getDigestHex(digestType) != null)
+          {
             found = true;
-            System.out.println(newEntry.getFileName() + " " + digestType + " " + newEntry.getDigestHex(digestType) + " (COLLISION)");
+
+            if (newEntry.getDigestHex(digestType).equals(existingEntry.getDigestHex(digestType))) {
+              System.out.println(newEntry.getFileName() + " " + digestType + " " + newEntry.getDigestHex(digestType) + " (OK)");
+            } else {
+              System.out.println(newEntry.getFileName() + " " + digestType + " " + newEntry.getDigestHex(digestType) + " (NOT OK)");
+            }
             break;
           }
         }
@@ -293,5 +338,21 @@ public class DigestCalculator {
         writeDigestListToXml(arqListaDigest, newEntry, digestType);
       }
     }
+  }
+
+  private static boolean isThereCollision(FileEntry currentEntry, ArrayList<FileEntry> newEntries, ArrayList<FileEntry> existingEntries, String digestType) {
+    ArrayList<FileEntry> allEntries = new ArrayList<>();
+    allEntries.addAll(newEntries);
+    allEntries.addAll(existingEntries);
+    
+    for (FileEntry entry : allEntries) {
+      if (!currentEntry.getFileName().equals(entry.getFileName())) {
+        if (currentEntry.getDigestHex(digestType).equals(entry.getDigestHex(digestType))) 
+        {
+          return true;
+        }
+      }
+  }
+    return false;
   }
 }

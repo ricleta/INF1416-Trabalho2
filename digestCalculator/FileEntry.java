@@ -1,3 +1,7 @@
+/*
+  Lívia Lutz dos Santos, 2211055
+  Ricardo Bastos Leta Vieira, 2110526
+*/
 package digestCalculator;
 
 import java.util.Map;
@@ -15,23 +19,22 @@ public class FileEntry {
         addDigest(digestType, digestHex);
     }
 
-    public Boolean addDigest(String digestType, String digestHex){
+    public void addDigest(String digestType, String digestHex){
         if (digestMap == null) {
             digestMap = new java.util.HashMap<>();
         }
         
         if (digestHex == null || digestHex.isEmpty()) {
-            return false;
+            return;
         }
         if (digestType == null || digestType.isEmpty()) {
-            return false;
+            return;
         }
         if (digestMap.containsValue(digestHex)) {
-            return false;
+            return;
         }
 
         digestMap.put(digestType, digestHex);
-        return true;
     }
 
     public String getFileName() {
@@ -40,9 +43,5 @@ public class FileEntry {
 
     public String getDigestHex(String digestType) {
         return digestMap.get(digestType);
-    }
-
-    public String[] getDigestTypes() {
-        return digestMap.keySet().toArray(new String[0]);
     }
 }
