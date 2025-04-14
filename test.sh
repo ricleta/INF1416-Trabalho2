@@ -4,7 +4,6 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
-javac digestCalculator/FileEntry.java
-javac digestCalculator/DigestCalculator.java
+javac DigestCalculator.java
 
-java digestCalculator/DigestCalculator $1 ./files ./arq_lista_digest.xml
+java DigestCalculator $1 ./files ./arq_lista_digest.xml
